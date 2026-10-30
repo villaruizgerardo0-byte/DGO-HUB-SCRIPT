@@ -1,0 +1,222 @@
+local WindUi = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+
+local Window = WindUi:CreateWindow({
+  Title = "DGO HUB",
+  Icon = "hospital",
+  Author = "[🎃] Hospital de Animales",
+  Folder = "Player",
+  Size = UDim2.fromOffset(480,320),
+  Transparent = true,
+  Theme = "Dark",
+  SideBarWidth = 180,
+  HideSearchBar = true,
+  ScrollBarEnabled = false,
+})
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local character = LocalPlayer.Character
+local humanoid = character and character:FindFirstChild("Humanoid")
+local funcionInfiniteJump = nil
+local UserInputService = game:GetService("UserInputService")
+local ProximityPromptService = game:GetService("ProximityPromptService")
+local RunService = game:GetService("RunService")
+
+LocalPlayer.CharacterAdded:Connect(function(char) 
+  character = char 
+  humanoid = char:WaitForChild("Humanoid") 
+end)
+
+local TabPlayer = Window:Tab({
+  Title = "Player",
+  Icon = "user",
+})
+
+local SectionPlayer = TabPlayer:Section({Title = "Player"})
+
+SectionPlayer:Input({
+  Title = "Velocidad",
+  Desc = "Elige tu velocidad",
+  Placeholder = "16-200",
+  Value = "16",
+  Type = "Input",
+  Callback = function(cambiarVelocidad)
+    local cambiarVelocidadNumero = tonumber(cambiarVelocidad)
+    if cambiarVelocidadNumero == nil then
+      return
+    end
+    if cambiarVelocidadNumero <16 or cambiarVelocidadNumero > 200 then
+      return
+    end
+    if humanoid then
+      humanoid.WalkSpeed = cambiarVelocidadNumero
+    end
+  end
+})
+
+SectionPlayer:Toggle({
+  Title = "Infinite Jump",
+  Desc = "",
+  Value = false,
+  Callback = function(state)
+    if state then
+      funcionInfiniteJump = UserInputService.JumpRequest:Connect(function()
+      if humanoid and humanoid.Parent and humanoid.Health > 0 then
+    humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+      end
+      end)
+    else
+      if funcionInfiniteJump then
+        funcionInfiniteJump:Disconnect()
+        funcionInfiniteJump = nil
+        end
+    end
+  end,
+})
+
+local conexiondelaTP = nil
+local Mouse = LocalPlayer:GetMouse()
+
+SectionPlayer:Toggle({
+  Title = "TP BASICO",
+  Desc = "Clickea en un lugar para teletransportarse ahi.",
+  Value = false,
+  Callback = function(tpbasic)
+    if tpbasic then
+      conexiondelaTP = Mouse.Button1Down:Connect(function()
+        if character and character:FindFirstChild("HumanoidRootPart")
+        then
+          character .HumanoidRootPart.CFrame = CFrame.new(Mouse.Hit.Position + Vector3.new(0, 3, 0))
+        end
+      end)
+    else
+          if conexiondelaTP then
+            conexiondelaTP:Disconnect()
+            conexiondelaTP = nil
+          end
+        end
+      end,
+})
+
+_G.SanityEnabled = false
+
+local ok, Lib = pcall(function()
+    return require(game.ReplicatedStorage:WaitForChild("Lib"))
+end)
+
+if ok and Lib and Lib.Network and Lib.Network.FireServer then
+    local oldNetworkFire = Lib.Network.FireServer
+    Lib.Network.FireServer = function(self, eventName, ...)
+        if _G.SanityEnabled and eventName == "PlayerLostSanity" then
+            return
+        end
+        return oldNetworkFire(self, eventName, ...)
+    end
+end
+
+task.spawn(function()
+    while task.wait() do
+        if _G.SanityEnabled then
+            local currentSanity = LocalPlayer:GetAttribute("Sanity")
+            if currentSanity and currentSanity ~= 100 then
+                LocalPlayer:SetAttribute("Sanity", 100)
+            end
+        end
+    end
+end)
+
+SectionPlayer:Toggle({
+  Title = "Salud Mental Ilimitada",
+  Desc = "",
+  Value = false,
+  Callback = function (saludMentalInfinita)
+    _G.SanityEnabled = saludMentalInfinita
+    if saludMentalInfinita then
+        LocalPlayer:SetAttribute("Sanity", 100)
+    end
+  end
+})
+
+local conexionNoclip = nil
+
+SectionPlayer:Toggle({
+  Title = "Noclip",
+  Desc = "Atraviesa las paredes",
+  Value = false,
+  Callback = function (noclipFunction)
+    if noclipFunction then
+      conexionNoclip = RunService.Stepped:Connect(function()
+        if character then
+      for _, part in pairs(character:GetDescendants()) do
+        if part:IsA("BasePart") and part.CanCollide then
+          part.CanCollide = false
+        end
+      end
+        end
+      end)
+        else
+          if conexionNoclip then
+            conexionNoclip:Disconnect()
+            conexionNoclip = nil
+          end
+        end
+  end
+})
+
+local TabUtilities = Window:Tab({
+  Title = "Utilities",
+  Icon = "list",
+})
+
+local SectionUtilities = TabUtilities:Section({Title = "Utilities"})
+
+local conexionInstantInteract = nil
+
+SectionUtilities:Toggle({
+  Title = "Instant Interact",
+  Desc = "",
+  Value = false,
+  Callback = function(instantInteract)
+    if instantInteract then
+      conexionInstantInteract = ProximityPromptService.PromptButtonHoldBegan:Connect(function(prompt)
+        fireproximityprompt(prompt)
+      end)
+    else
+      if conexionInstantInteract then
+        conexionInstantInteract:Disconnect()
+        conexionInstantInteract = nil
+      end
+    end
+  end,
+})
+
+local TabFarm = Window:Tab({
+  Title = "Farm",
+  Icon = "wallet",
+})
+
+local SectionFarm = TabFarm:Section({Title = "Farm"})
+SectionFarm:Toggle({
+  Title = "Farm",
+  Desc = "Funcion no disponible",
+  Value = false,
+    
+})
+
+local TabCopyrigthAndInfo = Window:Tab({
+  Title = "Creditos y Informacion",
+  Icon = "info"
+})
+
+local SectionCopyrigthAndInfo = TabCopyrigthAndInfo:Section({Title = "Copyright"})
+SectionCopyrigthAndInfo:Paragraph({
+  Title = "Creador del script",
+  Desc = "Gerardo Villa Ruiz",
+  Color = Color3.fromRGB(200, 200, 200)
+})
+local SectionCopyrigthAndInfo = TabCopyrigthAndInfo:Section({Title = "Informacion del script"})
+SectionCopyrigthAndInfo:Paragraph({
+  Title = "Actualización mas reciente:",
+  Desc = "29 de Ocutbre del 2026",
+  Color = Color3.fromRGB(200, 200, 200)
+})
